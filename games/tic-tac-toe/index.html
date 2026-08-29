@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Tic-Tac-Toe</title>
+<style>
+  :root { --bg: #06070a; --grid: #12141c; --cell: #1b1e28; --text: #eef0f7; --dim: #9aa0b4; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; -webkit-user-select: none; user-select: none;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #hud { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 0.85rem; color: var(--dim); flex-shrink: 0; gap: 10px; }
+  #hud strong { color: var(--text); font-size: 1rem; }
+  #hud button { background: var(--cell); border: 1px solid #262a37; color: var(--text); padding: 6px 14px; border-radius: 999px; cursor: pointer; font-size: 0.8rem; }
+  #stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; gap: 16px; padding: 10px; position: relative; }
+  #status { color: var(--dim); font-size: 0.95rem; min-height: 1.4em; }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 8px;
+    width: min(80vw, 340px);
+    height: min(80vw, 340px);
+  }
+  .cell {
+    background: var(--cell);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.4rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .cell.win { background: rgba(57, 255, 136, 0.18); }
+  .cell.x { color: #39e6ff; }
+  .cell.o { color: #ff5c7c; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span>Wins <strong id="w">0</strong> · Losses <strong id="l">0</strong> · Draws <strong id="d">0</strong></span>
+    <button id="restart-btn">Restart</button>
+  </div>
+  <div id="stage">
+    <div id="status">Your move — you're X</div>
+    <div id="board"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const boardEl = document.getElementById("board");
+  const statusEl = document.getElementById("status");
+  const wEl = document.getElementById("w"), lEl = document.getElementById("l"), dEl = document.getElementById("d");
+
+  const STATS_KEY = "datum-ttt-stats";
+  let stats = JSON.parse(localStorage.getItem(STATS_KEY) || '{"w":0,"l":0,"d":0}');
+  wEl.textContent = stats.w; lEl.textContent = stats.l; dEl.textContent = stats.d;
+
+  const LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6],
+  ];
+
+  let cells, board, over, cellEls;
+
+  function checkWinner(b) {
+    for (const [a, c, d] of LINES) {
+      if (b[a] && b[a] === b[c] && b[a] === b[d]) return { winner: b[a], line: [a, c, d] };
+    }
+    if (b.every((v) => v)) return { winner: "draw" };
+    return null;
+  }
+
+  function minimax(b, isMax) {
+    const result = checkWinner(b);
+    if (result) {
+      if (result.winner === "O") return { score: 1 };
+      if (result.winner === "X") return { score: -1 };
+      return { score: 0 };
+    }
+    const moves = [];
+    for (let i = 0; i < 9; i++) {
+      if (b[i]) continue;
+      b[i] = isMax ? "O" : "X";
+      const { score } = minimax(b, !isMax);
+      moves.push({ index: i, score });
+      b[i] = null;
+    }
+    if (isMax) {
+      const best = moves.reduce((a, m) => (m.score > a.score ? m : a));
+      return best;
+    } else {
+      const best = moves.reduce((a, m) => (m.score < a.score ? m : a));
+      return best;
+    }
+  }
+
+  function render(winLine) {
+    for (let i = 0; i < 9; i++) {
+      const el = cellEls[i];
+      el.textContent = board[i] || "";
+      el.className = "cell" + (board[i] ? " " + board[i].toLowerCase() : "");
+      if (winLine && winLine.includes(i)) el.classList.add("win");
+    }
+  }
+
+  function saveStats() {
+    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    wEl.textContent = stats.w; lEl.textContent = stats.l; dEl.textContent = stats.d;
+  }
+
+  function playerMove(i) {
+    if (over || board[i]) return;
+    board[i] = "X";
+    const result = checkWinner(board);
+    if (result) return endGame(result);
+    render();
+    statusEl.textContent = "CPU is thinking…";
+    setTimeout(cpuMove, 300);
+  }
+
+  function cpuMove() {
+    if (over) return;
+    const { index } = minimax(board, true);
+    board[index] = "O";
+    const result = checkWinner(board);
+    if (result) return endGame(result);
+    render();
+    statusEl.textContent = "Your move — you're X";
+  }
+
+  function endGame(result) {
+    over = true;
+    render(result.line);
+    if (result.winner === "draw") {
+      statusEl.textContent = "It's a draw.";
+      stats.d++;
+    } else if (result.winner === "X") {
+      statusEl.textContent = "You win! 🎉";
+      stats.w++;
+    } else {
+      statusEl.textContent = "CPU wins.";
+      stats.l++;
+    }
+    saveStats();
+  }
+
+  function start() {
+    board = Array(9).fill(null);
+    over = false;
+    statusEl.textContent = "Your move — you're X";
+    render();
+  }
+
+  boardEl.innerHTML = "";
+  cellEls = [];
+  for (let i = 0; i < 9; i++) {
+    const el = document.createElement("div");
+    el.className = "cell";
+    el.addEventListener("click", () => playerMove(i));
+    boardEl.appendChild(el);
+    cellEls.push(el);
+  }
+
+  document.getElementById("restart-btn").addEventListener("click", start);
+  start();
+})();
+</script>
+</body>
+</html>

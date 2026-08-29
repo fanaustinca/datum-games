@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Pong</title>
+<style>
+  :root { --bg: #06070a; --grid: #12141c; --text: #eef0f7; --dim: #9aa0b4; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; -webkit-user-select: none; user-select: none;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #hud { display: flex; justify-content: center; align-items: center; gap: 40px; padding: 10px 16px; font-size: 0.85rem; color: var(--dim); flex-shrink: 0; }
+  #hud strong { color: var(--text); font-size: 1.4rem; }
+  #stage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; touch-action: none; }
+  canvas { background: var(--grid); border-radius: 10px; max-width: 100%; max-height: 100%; }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(6,7,10,0.85); text-align: center; padding: 20px; }
+  #overlay.hidden { display: none; }
+  #overlay h2 { margin: 0; font-size: 1.4rem; }
+  #overlay p { margin: 0; color: var(--dim); font-size: 0.9rem; }
+  button { background: linear-gradient(135deg, #7c5cff, #39e6ff); border: none; color: #06070a; font-weight: 700; padding: 10px 22px; border-radius: 999px; cursor: pointer; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span>You: <strong id="p-score">0</strong></span>
+    <span>CPU: <strong id="c-score">0</strong></span>
+  </div>
+  <div id="stage">
+    <canvas id="game" width="600" height="420"></canvas>
+    <div id="overlay">
+      <h2 id="overlay-title">Pong</h2>
+      <p id="overlay-msg">Move with your mouse, touch, or W/S. First to 7 wins.</p>
+      <button id="start-btn">Start</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  const PADDLE_W = 10, PADDLE_H = 80;
+  const WIN_SCORE = 7;
+
+  const pScoreEl = document.getElementById("p-score");
+  const cScoreEl = document.getElementById("c-score");
+  const overlay = document.getElementById("overlay");
+  const overlayTitle = document.getElementById("overlay-title");
+  const overlayMsg = document.getElementById("overlay-msg");
+  const startBtn = document.getElementById("start-btn");
+
+  let player, cpu, ball, pScore, cScore, running;
+
+  function resize() {
+    const stage = document.getElementById("stage");
+    const scale = Math.min(stage.clientWidth / W, stage.clientHeight / H, 1) * 0.96;
+    canvas.style.width = W * scale + "px";
+    canvas.style.height = H * scale + "px";
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function resetBall(dir) {
+    ball = { x: W / 2, y: H / 2, r: 7, vx: 5 * dir, vy: (Math.random() * 4 - 2) };
+  }
+
+  function start() {
+    player = { y: H / 2 - PADDLE_H / 2 };
+    cpu = { y: H / 2 - PADDLE_H / 2 };
+    pScore = 0; cScore = 0; running = true;
+    pScoreEl.textContent = 0; cScoreEl.textContent = 0;
+    resetBall(1);
+    overlay.classList.add("hidden");
+    requestAnimationFrame(loop);
+  }
+
+  function movePlayerTo(clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const y = ((clientY - rect.top) / rect.height) * H;
+    player.y = Math.max(0, Math.min(H - PADDLE_H, y - PADDLE_H / 2));
+  }
+  canvas.addEventListener("mousemove", (e) => { if (running) movePlayerTo(e.clientY); });
+  canvas.addEventListener("touchmove", (e) => { if (running) { movePlayerTo(e.touches[0].clientY); e.preventDefault(); } }, { passive: false });
+
+  const keys = {};
+  window.addEventListener("keydown", (e) => { keys[e.key] = true; });
+  window.addEventListener("keyup", (e) => { keys[e.key] = false; });
+
+  function update() {
+    if (keys.w || keys.W || keys.ArrowUp) player.y = Math.max(0, player.y - 7);
+    if (keys.s || keys.S || keys.ArrowDown) player.y = Math.min(H - PADDLE_H, player.y + 7);
+
+    const cpuCenter = cpu.y + PADDLE_H / 2;
+    const targetY = ball.y;
+    const cpuSpeed = 4.4;
+    if (Math.abs(cpuCenter - targetY) > 6) {
+      cpu.y += cpuCenter < targetY ? cpuSpeed : -cpuSpeed;
+    }
+    cpu.y = Math.max(0, Math.min(H - PADDLE_H, cpu.y));
+
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy *= -1; }
+    if (ball.y + ball.r > H) { ball.y = H - ball.r; ball.vy *= -1; }
+
+    if (ball.vx < 0 && ball.x - ball.r < PADDLE_W && ball.x - ball.r > 0 &&
+        ball.y > player.y && ball.y < player.y + PADDLE_H) {
+      const hit = (ball.y - (player.y + PADDLE_H / 2)) / (PADDLE_H / 2);
+      ball.vx = Math.abs(ball.vx) * 1.04;
+      ball.vy = hit * 6;
+      ball.x = PADDLE_W + ball.r;
+    }
+
+    if (ball.vx > 0 && ball.x + ball.r > W - PADDLE_W && ball.x + ball.r < W &&
+        ball.y > cpu.y && ball.y < cpu.y + PADDLE_H) {
+      const hit = (ball.y - (cpu.y + PADDLE_H / 2)) / (PADDLE_H / 2);
+      ball.vx = -Math.abs(ball.vx) * 1.04;
+      ball.vy = hit * 6;
+      ball.x = W - PADDLE_W - ball.r;
+    }
+
+    if (ball.x < 0) { cScore++; cScoreEl.textContent = cScore; checkWin(); resetBall(1); }
+    if (ball.x > W) { pScore++; pScoreEl.textContent = pScore; checkWin(); resetBall(-1); }
+  }
+
+  function checkWin() {
+    if (pScore >= WIN_SCORE || cScore >= WIN_SCORE) {
+      running = false;
+      overlayTitle.textContent = pScore > cScore ? "You win! 🎉" : "CPU wins";
+      overlayMsg.textContent = `Final score ${pScore} — ${cScore}.`;
+      startBtn.textContent = "Play again";
+      overlay.classList.remove("hidden");
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.setLineDash([8, 10]);
+    ctx.beginPath();
+    ctx.moveTo(W / 2, 0);
+    ctx.lineTo(W / 2, H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = "#eef0f7";
+    ctx.fillRect(0, player.y, PADDLE_W, PADDLE_H);
+    ctx.fillRect(W - PADDLE_W, cpu.y, PADDLE_W, PADDLE_H);
+
+    ctx.fillStyle = "#39e6ff";
+    ctx.shadowColor = "#39e6ff";
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function loop() {
+    if (!running) return;
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  startBtn.addEventListener("click", start);
+  player = { y: H / 2 - PADDLE_H / 2 };
+  cpu = { y: H / 2 - PADDLE_H / 2 };
+  ball = { x: W / 2, y: H / 2, r: 7, vx: 0, vy: 0 };
+  draw();
+})();
+</script>
+</body>
+</html>

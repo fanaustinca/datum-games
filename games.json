@@ -86,5 +86,77 @@
     "mobileOnly": true,
     "added": "2026-08-29",
     "featured": true
+  },
+  {
+    "id": "2048",
+    "title": "2048",
+    "tagline": "Slide, merge, reach 2048.",
+    "description": "Slide numbered tiles across a 4x4 grid, merging matching values until you reach 2048 — or keep going for a bigger score.",
+    "path": "games/2048/index.html",
+    "icon": "🔢",
+    "color": "#ffd23f",
+    "tags": ["puzzle", "classic", "singleplayer", "keyboard", "touch"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "breakout",
+    "title": "Breakout",
+    "tagline": "Paddle, ball, bricks.",
+    "description": "Bounce the ball off your paddle to smash every brick. Miss three times and it's game over — clear a wall and the next one gets faster.",
+    "path": "games/breakout/index.html",
+    "icon": "🧱",
+    "color": "#39ff88",
+    "tags": ["arcade", "classic", "singleplayer", "mouse", "touch", "keyboard"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "minesweeper",
+    "title": "Minesweeper",
+    "tagline": "Flag the mines, clear the field.",
+    "description": "The classic logic puzzle. Reveal every safe cell without triggering one of the 10 hidden mines on a 9x9 board.",
+    "path": "games/minesweeper/index.html",
+    "icon": "💣",
+    "color": "#ff5c7c",
+    "tags": ["puzzle", "classic", "logic", "singleplayer", "mouse", "touch"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "pong",
+    "title": "Pong",
+    "tagline": "The original paddle game.",
+    "description": "First to 7 points wins. Move your paddle with the mouse, touch, or W/S to keep the ball away from your side of the court.",
+    "path": "games/pong/index.html",
+    "icon": "🏓",
+    "color": "#39e6ff",
+    "tags": ["arcade", "classic", "singleplayer", "mouse", "touch", "keyboard"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "tic-tac-toe",
+    "title": "Tic-Tac-Toe",
+    "tagline": "Try to beat the unbeatable CPU.",
+    "description": "Classic 3x3 tic-tac-toe against a perfect-play AI. Winning is impossible if the CPU plays optimally — can you at least force a draw every time?",
+    "path": "games/tic-tac-toe/index.html",
+    "icon": "❌",
+    "color": "#7c5cff",
+    "tags": ["puzzle", "classic", "logic", "singleplayer", "mouse", "touch"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "connect-four",
+    "title": "Connect Four",
+    "tagline": "Four in a row wins.",
+    "description": "Drop discs into a 7x6 grid and connect four in a row — horizontally, vertically, or diagonally — before the CPU does.",
+    "path": "games/connect-four/index.html",
+    "icon": "🔴",
+    "color": "#ffd23f",
+    "tags": ["puzzle", "classic", "strategy", "singleplayer", "mouse", "touch"],
+    "added": "2026-08-29",
+    "featured": false
   }
 ]

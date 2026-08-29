@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Minesweeper</title>
+<style>
+  :root { --bg: #06070a; --grid: #12141c; --cell: #1b1e28; --cell-hover: #262a37; --text: #eef0f7; --dim: #9aa0b4; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; -webkit-user-select: none; user-select: none;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #hud { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 0.85rem; color: var(--dim); flex-shrink: 0; gap: 10px; }
+  #hud strong { color: var(--text); font-size: 1rem; }
+  #hud button { background: var(--cell); border: 1px solid #262a37; color: var(--text); padding: 6px 14px; border-radius: 999px; cursor: pointer; font-size: 0.8rem; }
+  #stage { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 10px; position: relative; }
+  #board {
+    display: grid;
+    background: var(--grid);
+    border-radius: 10px;
+    padding: 6px;
+    gap: 3px;
+    touch-action: manipulation;
+  }
+  .cell {
+    background: var(--cell);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .cell.revealed { background: rgba(255,255,255,0.03); cursor: default; }
+  .cell.mine { background: #ff5c7c; }
+  .cell.flag::after { content: "🚩"; font-size: 0.75em; }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(6,7,10,0.86); text-align: center; padding: 20px; }
+  #overlay.hidden { display: none; }
+  #overlay h2 { margin: 0; font-size: 1.4rem; }
+  #overlay p { margin: 0; color: var(--dim); font-size: 0.9rem; }
+  button.primary { background: linear-gradient(135deg, #7c5cff, #39e6ff); border: none; color: #06070a; font-weight: 700; padding: 10px 22px; border-radius: 999px; cursor: pointer; font-size: 0.9rem; }
+  .hint { color: var(--dim); font-size: 0.75rem; padding: 0 16px 10px; text-align: center; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span>💣 <strong id="mines-left">10</strong></span>
+    <span>⏱ <strong id="timer">0</strong>s</span>
+    <button id="restart-btn">Restart</button>
+  </div>
+  <div id="stage">
+    <div id="board"></div>
+    <div id="overlay" class="hidden">
+      <h2 id="overlay-title">Boom!</h2>
+      <p id="overlay-msg"></p>
+      <button class="primary" id="overlay-btn">Try again</button>
+    </div>
+  </div>
+  <p class="hint">Tap to reveal · long-press (or right-click) to flag</p>
+</div>
+
+<script>
+(function () {
+  const COLS = 9, ROWS = 9, MINES = 10;
+  const board = document.getElementById("board");
+  const minesLeftEl = document.getElementById("mines-left");
+  const timerEl = document.getElementById("timer");
+  const overlay = document.getElementById("overlay");
+  const overlayTitle = document.getElementById("overlay-title");
+  const overlayMsg = document.getElementById("overlay-msg");
+  const overlayBtn = document.getElementById("overlay-btn");
+
+  const NUM_COLORS = ["", "#39e6ff", "#39ff88", "#ffd23f", "#ff9f43", "#ff5c7c", "#7c5cff", "#eef0f7", "#9aa0b4"];
+
+  let cells, revealedCount, flagCount, over, started, timer, seconds;
+
+  function neighbors(r, c) {
+    const out = [];
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) out.push([nr, nc]);
+      }
+    return out;
+  }
+
+  function placeMines(safeR, safeC) {
+    let placed = 0;
+    while (placed < MINES) {
+      const r = Math.floor(Math.random() * ROWS);
+      const c = Math.floor(Math.random() * COLS);
+      if (cells[r][c].mine) continue;
+      if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
+      cells[r][c].mine = true;
+      placed++;
+    }
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        cells[r][c].count = neighbors(r, c).filter(([nr, nc]) => cells[nr][nc].mine).length;
+      }
+    }
+  }
+
+  function build() {
+    board.style.gridTemplateColumns = `repeat(${COLS}, minmax(0, 1fr))`;
+    board.style.width = "min(94vw, 400px)";
+    board.style.aspectRatio = `${COLS} / ${ROWS}`;
+    board.innerHTML = "";
+    cells = [];
+    for (let r = 0; r < ROWS; r++) {
+      const row = [];
+      for (let c = 0; c < COLS; c++) {
+        const el = document.createElement("div");
+        el.className = "cell";
+        row.push({ el, mine: false, count: 0, revealed: false, flagged: false });
+        board.appendChild(el);
+      }
+      cells.push(row);
+    }
+  }
+
+  function reveal(r, c) {
+    const cell = cells[r][c];
+    if (cell.revealed || cell.flagged) return;
+    cell.revealed = true;
+    cell.el.classList.add("revealed");
+    revealedCount++;
+    if (cell.mine) {
+      cell.el.classList.add("mine");
+      cell.el.textContent = "💥";
+      return endGame(false);
+    }
+    if (cell.count > 0) {
+      cell.el.textContent = cell.count;
+      cell.el.style.color = NUM_COLORS[cell.count];
+    } else {
+      neighbors(r, c).forEach(([nr, nc]) => reveal(nr, nc));
+    }
+    checkWin();
+  }
+
+  function checkWin() {
+    if (revealedCount === ROWS * COLS - MINES) endGame(true);
+  }
+
+  function endGame(won) {
+    over = true;
+    clearInterval(timer);
+    if (!won) {
+      cells.forEach((row) => row.forEach((cell) => {
+        if (cell.mine && !cell.revealed) { cell.el.classList.add("revealed", "mine"); cell.el.textContent = "💣"; }
+      }));
+    }
+    overlayTitle.textContent = won ? "You cleared it! 🎉" : "Boom!";
+    overlayMsg.textContent = won ? `Cleared the field in ${seconds}s.` : "You hit a mine. Try again?";
+    overlay.classList.remove("hidden");
+  }
+
+  function toggleFlag(r, c) {
+    const cell = cells[r][c];
+    if (cell.revealed || over) return;
+    cell.flagged = !cell.flagged;
+    cell.el.classList.toggle("flag", cell.flagged);
+    flagCount += cell.flagged ? 1 : -1;
+    minesLeftEl.textContent = MINES - flagCount;
+  }
+
+  function attachEvents() {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const el = cells[r][c].el;
+        let pressTimer = null;
+        let longPressed = false;
+
+        el.addEventListener("click", () => {
+          if (over || longPressed) { longPressed = false; return; }
+          if (!started) { started = true; placeMines(r, c); startTimer(); }
+          reveal(r, c);
+        });
+        el.addEventListener("contextmenu", (e) => { e.preventDefault(); toggleFlag(r, c); });
+
+        el.addEventListener("touchstart", () => {
+          longPressed = false;
+          pressTimer = setTimeout(() => { longPressed = true; toggleFlag(r, c); }, 450);
+        }, { passive: true });
+        el.addEventListener("touchend", () => clearTimeout(pressTimer));
+        el.addEventListener("touchmove", () => clearTimeout(pressTimer));
+      }
+    }
+  }
+
+  function startTimer() {
+    seconds = 0;
+    timer = setInterval(() => { seconds++; timerEl.textContent = seconds; }, 1000);
+  }
+
+  function start() {
+    over = false; started = false; revealedCount = 0; flagCount = 0; seconds = 0;
+    clearInterval(timer);
+    timerEl.textContent = 0;
+    minesLeftEl.textContent = MINES;
+    overlay.classList.add("hidden");
+    build();
+    attachEvents();
+  }
+
+  document.getElementById("restart-btn").addEventListener("click", start);
+  overlayBtn.addEventListener("click", start);
+
+  start();
+})();
+</script>
+</body>
+</html>
