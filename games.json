@@ -35,5 +35,17 @@
     "tags": ["platformer", "physics", "puzzle", "singleplayer", "keyboard"],
     "added": "2026-08-29",
     "featured": true
+  },
+  {
+    "id": "prism-path",
+    "title": "Prism Path",
+    "tagline": "Rotate mirrors, route the laser.",
+    "description": "Rotate mirrors and prisms to route lasers onto every target across 100 hand-tuned levels.",
+    "path": "https://fanaustinca.github.io/prism-path/",
+    "icon": "🔷",
+    "color": "#ffd23f",
+    "tags": ["puzzle", "physics", "logic", "singleplayer", "mouse"],
+    "added": "2026-08-29",
+    "featured": true
   }
 ]
