@@ -51,6 +51,17 @@ files, including GitHub Pages.
    - `tags` power both search and the tag filter chips — reuse existing
      tags where it makes sense so filters stay useful.
    - `featured` pins the game to the top of the grid and adds a badge.
+   - `source` (optional) — a link to the game's official/original page
+     (e.g. its itch.io listing). When set, a "View on <sourceLabel>"
+     button appears on the play page. `sourceLabel` defaults to `itch.io`.
+   - `gate` (optional, boolean) — set `true` when `path` shouldn't
+     auto-load. Instead the play page shows a landing panel with the
+     `source` link first and a "Play here instead" button that loads
+     `path` into the iframe on click. Use this for platforms like
+     itch.io that block being embedded directly (their page sends a
+     `frame-ancestors` CSP), where you're instead pointing `path` at a
+     self-hosted mirror. It also gives the official page top billing
+     for search indexing while still letting people play in-place.
 3. Commit and push. GitHub Pages redeploys automatically.
 
 That's it — no other file needs to change. The search bar, tag filters,

@@ -31,12 +31,21 @@
       </div>
       <div class="play-actions">
         <a class="btn" id="source-link" href="#" target="_blank" rel="noopener" style="display: none;">View on itch.io ↗</a>
-        <button class="btn" id="fullscreen-btn">Fullscreen</button>
+        <button class="btn" id="fullscreen-btn" style="display: none;">Fullscreen</button>
       </div>
     </div>
 
-    <div class="game-frame-wrap">
+    <div class="game-frame-wrap" id="frame-wrap" style="display: none;">
       <iframe id="game-frame" title="Game" allow="fullscreen; gamepad; autoplay; clipboard-write" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads"></iframe>
+    </div>
+
+    <div class="game-gate" id="game-gate" style="display: none;">
+      <div class="game-gate-icon" id="gate-icon"></div>
+      <p class="game-gate-msg">This game is hosted externally and doesn't embed cleanly everywhere — play it on its home page, or load the in-browser mirror here.</p>
+      <div class="game-gate-actions">
+        <a class="btn btn-primary" id="gate-external-link" href="#" target="_blank" rel="noopener">View on itch.io ↗</a>
+        <button class="btn" id="gate-play-here-btn">Play here instead</button>
+      </div>
     </div>
 
     <p class="play-desc" id="play-desc"></p>
@@ -55,7 +64,19 @@
       const params = new URLSearchParams(window.location.search);
       const id = params.get("id");
       const frame = document.getElementById("game-frame");
+      const frameWrap = document.getElementById("frame-wrap");
       const fullscreenBtn = document.getElementById("fullscreen-btn");
+      const gate = document.getElementById("game-gate");
+      const gateIcon = document.getElementById("gate-icon");
+      const gateExternalLink = document.getElementById("gate-external-link");
+      const gatePlayHereBtn = document.getElementById("gate-play-here-btn");
+
+      function showFrame(game) {
+        gate.style.display = "none";
+        frameWrap.style.display = "";
+        fullscreenBtn.style.display = "";
+        frame.src = game.path;
+      }
 
       try {
         const games = await window.DatumCatalog.loadGames();
@@ -64,7 +85,6 @@
         if (!game) {
           document.getElementById("play-title").textContent = "Game not found";
           document.getElementById("play-tagline").textContent = "That game doesn't exist in the catalog.";
-          document.querySelector(".game-frame-wrap").style.display = "none";
           return;
         }
 
@@ -77,12 +97,23 @@
         document.getElementById("play-tags").innerHTML = (game.tags || [])
           .map((t) => `<span class="pill">${t}</span>`)
           .join("");
-        frame.src = game.path;
 
         if (game.source) {
           const sourceLink = document.getElementById("source-link");
           sourceLink.href = game.source;
+          sourceLink.textContent = `View on ${game.sourceLabel || "itch.io"} ↗`;
           sourceLink.style.display = "";
+        }
+
+        if (game.gate && game.source) {
+          gateIcon.textContent = game.icon || "🎮";
+          gateIcon.style.background = `${game.color}33`;
+          gateExternalLink.href = game.source;
+          gateExternalLink.textContent = `View on ${game.sourceLabel || "itch.io"} ↗`;
+          gate.style.display = "";
+          gatePlayHereBtn.addEventListener("click", () => showFrame(game));
+        } else {
+          showFrame(game);
         }
 
         fullscreenBtn.addEventListener("click", () => {
