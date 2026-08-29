@@ -67,6 +67,9 @@ files, including GitHub Pages.
      suggesting the visitor switch to a phone if their device doesn't
      look like one (checked via `(pointer: coarse)`). It doesn't block
      desktop visitors, just warns them.
+   - `desktopOnly` (optional, boolean) — the mirror image of `mobileOnly`,
+     for mouse/keyboard-precision experiences. Shows a banner suggesting
+     desktop when the visitor's device looks touch-only. Also doesn't block.
 3. Commit and push. GitHub Pages redeploys automatically.
 
 That's it — no other file needs to change. The search bar, tag filters,

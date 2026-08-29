@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Guessle</title>
+<style>
+  :root { --bg: #06070a; --grid: #12141c; --cell: #1b1e28; --border: #262a37; --text: #eef0f7; --dim: #9aa0b4; --green: #39ff88; --yellow: #ffd23f; --gray: #3a3f4d; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; -webkit-user-select: none; user-select: none;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #hud { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 0.85rem; color: var(--dim); flex-shrink: 0; }
+  #hud strong { color: var(--text); font-size: 1rem; }
+  #hud button { background: var(--cell); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 999px; cursor: pointer; font-size: 0.8rem; }
+  #stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; gap: 10px; padding: 8px; position: relative; }
+  #status { color: var(--dim); font-size: 0.85rem; min-height: 1.2em; text-transform: uppercase; letter-spacing: 0.04em; }
+  #grid { display: grid; grid-template-rows: repeat(6, 1fr); gap: 6px; width: min(88vw, 320px); aspect-ratio: 5 / 6; }
+  .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .tile {
+    background: var(--cell);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(1rem, 4.5vw, 1.6rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    transition: transform 0.15s ease;
+  }
+  .tile.pop { transform: scale(1.08); }
+  .tile.correct { background: var(--green); border-color: var(--green); color: #06070a; }
+  .tile.present { background: var(--yellow); border-color: var(--yellow); color: #06070a; }
+  .tile.absent { background: var(--gray); border-color: var(--gray); color: var(--text); }
+  #keyboard { display: flex; flex-direction: column; gap: 6px; width: min(94vw, 440px); }
+  .krow { display: flex; gap: 5px; justify-content: center; }
+  .key {
+    flex: 1;
+    max-width: 40px;
+    background: var(--cell);
+    border: none;
+    color: var(--text);
+    border-radius: 6px;
+    padding: 12px 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .key.wide { max-width: 60px; font-size: 0.65rem; }
+  .key.correct { background: var(--green); color: #06070a; }
+  .key.present { background: var(--yellow); color: #06070a; }
+  .key.absent { background: var(--gray); opacity: 0.5; }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(6,7,10,0.9); text-align: center; padding: 20px; }
+  #overlay.hidden { display: none; }
+  #overlay h2 { margin: 0; font-size: 1.4rem; }
+  #overlay p { margin: 0; color: var(--dim); font-size: 0.9rem; }
+  button.primary { background: linear-gradient(135deg, #7c5cff, #39e6ff); border: none; color: #06070a; font-weight: 700; padding: 10px 22px; border-radius: 999px; cursor: pointer; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span>Streak: <strong id="streak">0</strong></span>
+    <span id="status"></span>
+    <button id="restart-btn">New word</button>
+  </div>
+  <div id="stage">
+    <div id="grid"></div>
+    <div id="keyboard"></div>
+    <div id="overlay" class="hidden">
+      <h2 id="overlay-title"></h2>
+      <p id="overlay-msg"></p>
+      <button class="primary" id="overlay-btn">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const WORDS = ["about","above","actor","acute","admit","adopt","adult","after","again","agent",
+    "agree","ahead","alarm","album","alert","alike","alive","allow","alone","along",
+    "alter","among","angel","anger","angle","angry","apart","apple","apply","arena",
+    "argue","arise","armor","aside","asset","avoid","awake","award","aware","badly",
+    "baker","basic","basis","beach","began","begin","being","below","bench","birth",
+    "black","blade","blame","blank","blast","blind","block","blood","board","boost",
+    "boots","brain","brand","brave","bread","break","brick","brief","bring","broad",
+    "broke","brown","brush","build","built","burst","cabin","cable","candy","carry",
+    "catch","cause","chain","chair","chalk","chaos","charm","chart","chase","cheap",
+    "check","chess","chest","chief","child","chill","claim","class","clean","clear",
+    "climb","clock","close","cloth","cloud","coach","coast","could","count","court",
+    "cover","craft","crash","crazy","cream","crime","cross","crowd","crown","curve",
+    "cycle","daily","dance","dealt","death","debut","delay","depth","diary","dirty",
+    "doubt","dozen","draft","drain","drama","drawn","dream","dress","drift","drink",
+    "drive","drove","dying","eager","early","earth","eight","elite","empty","enemy",
+    "enjoy","enter","entry","equal","error","event","every","exact","exist","extra",
+    "faith","false","fault","field","fifth","fifty","fight","final","first","fixed",
+    "flame","flash","fleet","floor","fluid","focus","force","forth","forty","frame",
+    "fresh","front","frost","fruit","fully","funny","giant","given","glass","globe",
+    "glory","goose","grace","grade","grain","grand","grant","grasp","grass","great",
+    "green","greet","grief","grill","gross","group","grown","guard","guess","guest",
+    "guide","habit","happy","harsh","heart","heavy","hello","hence","house","human",
+    "humor","ideal","image","imply","index","inner","input","issue","japan","joint",
+    "judge","juice","jumbo","known","label","labor","large","laser","later","laugh",
+    "layer","learn","lease","least","leave","legal","level","light","limit","local",
+    "logic","loose","lower","loyal","lucky","lunch","magic","major","maker","march",
+    "match","maybe","mayor","medal","media","metal","meter","might","minor","minus",
+    "mixed","model","money","month","moral","motor","mount","mouse","mouth","movie",
+    "music","naked","never","newly","noise","north","noted","novel","nurse","occur",
+    "ocean","offer","often","onion","order","organ","other","ought","outer","owner",
+    "panel","panic","paper","party","pause","peace","phase","phone","photo","piano",
+    "piece","pilot","pitch","pixel","pizza","place","plain","plane","plant","plate",
+    "point","poker","pound","power","press","price","pride","prime","print","prior",
+    "prize","proof","proud","prove","pulse","punch","pupil","purse","queen","quick",
+    "quiet","quilt","quote","radio","raise","range","rapid","reach","react","ready",
+    "realm","rebel","refer","relax","reply","right","rigid","risky","river","robot",
+    "rocky","round","route","royal","rural","salad","salon","sauce","scale","scene",
+    "scope","score","screw","sense","serve","seven","shade","shake","shall","shape",
+    "share","shark","sharp","sheet","shelf","shell","shift","shine","shirt","shock",
+    "shoot","shore","short","shown","sight","silky","silly","since","sixth","sixty",
+    "skill","sleep","slice","slide","small","smart","smell","smile","smoke","snack",
+    "solid","solve","sorry","sound","south","space","spare","spark","speak","speed",
+    "spell","spend","spent","spicy","spike","spine","split","spoke","sport","spray",
+    "squad","stack","staff","stage","stake","stand","start","state","steak","steal",
+    "steam","steel","stick","stiff","still","stock","stone","store","storm","story",
+    "strip","study","stuff","style","sugar","suite","sunny","super","sweet","swift",
+    "swing","sword","table","taken","taste","teach","texas","thank","theft","their",
+    "theme","there","these","thick","thing","think","third","those","three","threw",
+    "throw","thumb","tiger","tight","timer","tired","title","today","token","topic",
+    "total","touch","tough","tower","toxic","trace","track","trade","trail","train",
+    "trait","trash","treat","trend","trial","tribe","trick","tried","truck","truly",
+    "trust","truth","tumor","twice","twist","ultra","uncle","under","undue","union",
+    "unite","unity","until","upper","upset","urban","usage","usual","vague","valid",
+    "value","venue","video","virus","visit","vital","vivid","vocal","voice","waste",
+    "watch","water","weigh","weird","wheel","where","which","while","white","whole",
+    "whose","witty","woman","world","worry","worse","worst","worth","would","wrist",
+    "write","wrong","yield","young","youth"];
+
+  const gridEl = document.getElementById("grid");
+  const keyboardEl = document.getElementById("keyboard");
+  const statusEl = document.getElementById("status");
+  const streakEl = document.getElementById("streak");
+  const overlay = document.getElementById("overlay");
+  const overlayTitle = document.getElementById("overlay-title");
+  const overlayMsg = document.getElementById("overlay-msg");
+  const overlayBtn = document.getElementById("overlay-btn");
+
+  const STREAK_KEY = "datum-wordle-streak";
+  let streak = Number(localStorage.getItem(STREAK_KEY) || 0);
+  streakEl.textContent = streak;
+
+  const ROWS = 6, WLEN = 5;
+  let answer, guesses, current, row, over, tiles, keyEls;
+
+  function newWord() {
+    answer = WORDS[Math.floor(Math.random() * WORDS.length)];
+    guesses = [];
+    current = "";
+    row = 0;
+    over = false;
+    statusEl.textContent = "";
+    buildGrid();
+    buildKeyboard();
+    overlay.classList.add("hidden");
+  }
+
+  function buildGrid() {
+    gridEl.innerHTML = "";
+    tiles = [];
+    for (let r = 0; r < ROWS; r++) {
+      const rowEl = document.createElement("div");
+      rowEl.className = "row";
+      const rowTiles = [];
+      for (let c = 0; c < WLEN; c++) {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        rowEl.appendChild(tile);
+        rowTiles.push(tile);
+      }
+      gridEl.appendChild(rowEl);
+      tiles.push(rowTiles);
+    }
+  }
+
+  const KEY_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
+  function buildKeyboard() {
+    keyboardEl.innerHTML = "";
+    keyEls = {};
+    KEY_ROWS.forEach((rowStr, i) => {
+      const rowEl = document.createElement("div");
+      rowEl.className = "krow";
+      if (i === 2) {
+        const enter = document.createElement("button");
+        enter.className = "key wide";
+        enter.textContent = "Enter";
+        enter.addEventListener("click", submit);
+        rowEl.appendChild(enter);
+      }
+      for (const ch of rowStr) {
+        const btn = document.createElement("button");
+        btn.className = "key";
+        btn.textContent = ch;
+        btn.addEventListener("click", () => typeChar(ch));
+        rowEl.appendChild(btn);
+        keyEls[ch] = btn;
+      }
+      if (i === 2) {
+        const back = document.createElement("button");
+        back.className = "key wide";
+        back.textContent = "⌫";
+        back.addEventListener("click", backspace);
+        rowEl.appendChild(back);
+      }
+      keyboardEl.appendChild(rowEl);
+    });
+  }
+
+  function typeChar(ch) {
+    if (over || current.length >= WLEN) return;
+    current += ch;
+    updateRow();
+  }
+
+  function backspace() {
+    if (over) return;
+    current = current.slice(0, -1);
+    updateRow();
+  }
+
+  function updateRow() {
+    for (let c = 0; c < WLEN; c++) {
+      const t = tiles[row][c];
+      t.textContent = current[c] || "";
+      t.classList.toggle("pop", !!current[c]);
+    }
+  }
+
+  function submit() {
+    if (over || current.length !== WLEN) {
+      if (current.length !== WLEN) flashStatus("Not enough letters");
+      return;
+    }
+    const guess = current;
+    const result = scoreGuess(guess, answer);
+    result.forEach((state, c) => {
+      const t = tiles[row][c];
+      t.classList.remove("pop");
+      t.classList.add(state);
+      const key = keyEls[guess[c]];
+      if (key) {
+        const rank = { absent: 0, present: 1, correct: 2 };
+        if (!key.dataset.rank || rank[state] > Number(key.dataset.rank)) {
+          key.dataset.rank = rank[state];
+          key.className = "key " + state;
+        }
+      }
+    });
+    guesses.push(guess);
+    if (guess === answer) return win();
+    row++;
+    current = "";
+    if (row >= ROWS) return lose();
+  }
+
+  function scoreGuess(guess, ans) {
+    const result = Array(WLEN).fill("absent");
+    const ansArr = ans.split("");
+    const used = Array(WLEN).fill(false);
+    for (let i = 0; i < WLEN; i++) {
+      if (guess[i] === ansArr[i]) { result[i] = "correct"; used[i] = true; }
+    }
+    for (let i = 0; i < WLEN; i++) {
+      if (result[i] === "correct") continue;
+      const j = ansArr.findIndex((ch, idx) => ch === guess[i] && !used[idx]);
+      if (j !== -1) { result[i] = "present"; used[j] = true; }
+    }
+    return result;
+  }
+
+  function flashStatus(msg) {
+    statusEl.textContent = msg;
+    setTimeout(() => { if (statusEl.textContent === msg) statusEl.textContent = ""; }, 1200);
+  }
+
+  function win() {
+    over = true;
+    streak++;
+    localStorage.setItem(STREAK_KEY, streak);
+    streakEl.textContent = streak;
+    overlayTitle.textContent = ["Genius!","Great!","Nice!","Good!","Phew!","Got it!"][row] || "You got it!";
+    overlayMsg.textContent = `${answer.toUpperCase()} in ${row + 1}/${ROWS}.`;
+    setTimeout(() => overlay.classList.remove("hidden"), 500);
+  }
+
+  function lose() {
+    over = true;
+    streak = 0;
+    localStorage.setItem(STREAK_KEY, streak);
+    streakEl.textContent = streak;
+    overlayTitle.textContent = "So close!";
+    overlayMsg.textContent = `The word was ${answer.toUpperCase()}.`;
+    setTimeout(() => overlay.classList.remove("hidden"), 400);
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submit();
+    else if (e.key === "Backspace") backspace();
+    else if (/^[a-zA-Z]$/.test(e.key)) typeChar(e.key.toLowerCase());
+  });
+
+  document.getElementById("restart-btn").addEventListener("click", newWord);
+  overlayBtn.addEventListener("click", newWord);
+
+  newWord();
+})();
+</script>
+</body>
+</html>

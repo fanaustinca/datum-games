@@ -158,5 +158,78 @@
     "tags": ["puzzle", "classic", "strategy", "singleplayer", "mouse", "touch"],
     "added": "2026-08-29",
     "featured": false
+  },
+  {
+    "id": "tetris",
+    "title": "Tetris",
+    "tagline": "Stack the falling blocks.",
+    "description": "The original block-stacking classic. Rotate and drop tetrominoes to clear lines — speed ramps up as your line count climbs.",
+    "path": "games/tetris/index.html",
+    "icon": "🟪",
+    "color": "#7c5cff",
+    "tags": ["arcade", "classic", "puzzle", "singleplayer", "keyboard", "touch"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "whack-a-mole",
+    "title": "Whack-a-Mole",
+    "tagline": "Fast hands, faster moles.",
+    "description": "You've got 30 seconds and nine holes. Whack every mole the instant it pops up — they get quicker the higher your score climbs.",
+    "path": "games/whack-a-mole/index.html",
+    "icon": "🔨",
+    "color": "#a06a3f",
+    "tags": ["arcade", "reflex", "singleplayer", "mouse", "touch"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "flappy-bird",
+    "title": "Flappy Byte",
+    "tagline": "One tap. Endless pipes.",
+    "description": "Tap, click, or hit space to flap through an endless field of pipes. One hit and it's over — how far can you get?",
+    "path": "games/flappy-bird/index.html",
+    "icon": "🐤",
+    "color": "#ffd23f",
+    "tags": ["arcade", "classic", "singleplayer", "mouse", "touch", "keyboard"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "sudoku",
+    "title": "Sudoku",
+    "tagline": "Fill the grid, no repeats.",
+    "description": "Every puzzle is freshly generated with a guaranteed unique solution. Pick Easy, Medium, or Hard and fill the 9x9 grid.",
+    "path": "games/sudoku/index.html",
+    "icon": "🔷",
+    "color": "#39e6ff",
+    "tags": ["puzzle", "classic", "logic", "singleplayer", "mouse", "touch"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "wordle",
+    "title": "Guessle",
+    "tagline": "Six tries, one hidden word.",
+    "description": "Guess the hidden five-letter word in six tries. Green means right letter, right spot — yellow means it's in the word, just not there.",
+    "path": "games/wordle/index.html",
+    "icon": "🟩",
+    "color": "#39ff88",
+    "tags": ["puzzle", "word", "logic", "singleplayer", "keyboard", "touch"],
+    "added": "2026-08-29",
+    "featured": false
+  },
+  {
+    "id": "newtons-gravity",
+    "title": "Newton's Gravity",
+    "tagline": "A gravity sandbox for orbits and slingshots.",
+    "description": "An interactive gravity simulation — place masses and watch orbits, collisions, and slingshot trajectories unfold in real time. Precision mouse control makes this one best on desktop.",
+    "path": "https://newton.flamebots.org",
+    "icon": "🪐",
+    "color": "#ff9f43",
+    "tags": ["simulation", "physics", "sandbox", "singleplayer", "mouse", "desktop-only"],
+    "desktopOnly": true,
+    "added": "2026-08-29",
+    "featured": true
   }
 ]

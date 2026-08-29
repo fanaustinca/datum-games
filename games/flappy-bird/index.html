@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Flappy Byte</title>
+<style>
+  :root { --bg: #06070a; --grid: #12141c; --text: #eef0f7; --dim: #9aa0b4; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; -webkit-user-select: none; user-select: none;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #hud { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 0.85rem; color: var(--dim); flex-shrink: 0; }
+  #hud strong { color: var(--text); font-size: 1.1rem; }
+  #stage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; touch-action: none; cursor: pointer; }
+  canvas { background: var(--grid); border-radius: 10px; max-width: 100%; max-height: 100%; }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(6,7,10,0.85); text-align: center; padding: 20px; }
+  #overlay.hidden { display: none; }
+  #overlay h2 { margin: 0; font-size: 1.4rem; }
+  #overlay p { margin: 0; color: var(--dim); font-size: 0.9rem; }
+  button { background: linear-gradient(135deg, #7c5cff, #39e6ff); border: none; color: #06070a; font-weight: 700; padding: 10px 22px; border-radius: 999px; cursor: pointer; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span>Score: <strong id="score">0</strong></span>
+    <span>Best: <strong id="best">0</strong></span>
+  </div>
+  <div id="stage">
+    <canvas id="game" width="360" height="560"></canvas>
+    <div id="overlay">
+      <h2 id="overlay-title">Flappy Byte</h2>
+      <p id="overlay-msg">Click, tap, or press Space to flap. Don't hit the pipes.</p>
+      <button id="start-btn">Start</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const overlay = document.getElementById("overlay");
+  const overlayTitle = document.getElementById("overlay-title");
+  const overlayMsg = document.getElementById("overlay-msg");
+  const startBtn = document.getElementById("start-btn");
+  const stage = document.getElementById("stage");
+
+  const BEST_KEY = "datum-flappy-best";
+  let best = Number(localStorage.getItem(BEST_KEY) || 0);
+  bestEl.textContent = best;
+
+  const GRAVITY = 0.42, FLAP = -7.2, PIPE_GAP = 150, PIPE_W = 56, PIPE_SPEED = 2.6, PIPE_SPACING = 210;
+
+  let bird, pipes, score, running, started, frame;
+
+  function resize() {
+    const scale = Math.min(stage.clientWidth / W, stage.clientHeight / H, 1) * 0.96;
+    canvas.style.width = W * scale + "px";
+    canvas.style.height = H * scale + "px";
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function reset() {
+    bird = { x: W * 0.3, y: H / 2, r: 12, vy: 0 };
+    pipes = [];
+    score = 0;
+    frame = 0;
+    started = false;
+    scoreEl.textContent = 0;
+  }
+
+  function addPipe() {
+    const margin = 60;
+    const top = margin + Math.random() * (H - PIPE_GAP - margin * 2);
+    pipes.push({ x: W + PIPE_W, top, passed: false });
+  }
+
+  function flap() {
+    if (!running) return;
+    if (!started) started = true;
+    bird.vy = FLAP;
+  }
+
+  function update() {
+    if (!started) return;
+    frame++;
+    bird.vy += GRAVITY;
+    bird.y += bird.vy;
+
+    if (frame % Math.round(PIPE_SPACING / PIPE_SPEED) === 0) addPipe();
+
+    pipes.forEach((p) => (p.x -= PIPE_SPEED));
+    pipes = pipes.filter((p) => p.x > -PIPE_W);
+
+    for (const p of pipes) {
+      if (!p.passed && p.x + PIPE_W < bird.x) {
+        p.passed = true;
+        score++;
+        scoreEl.textContent = score;
+      }
+      const inX = bird.x + bird.r > p.x && bird.x - bird.r < p.x + PIPE_W;
+      const inGap = bird.y - bird.r > p.top && bird.y + bird.r < p.top + PIPE_GAP;
+      if (inX && !inGap) return gameOver();
+    }
+
+    if (bird.y + bird.r > H || bird.y - bird.r < 0) return gameOver();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    ctx.fillStyle = "#39ff88";
+    pipes.forEach((p) => {
+      ctx.fillRect(p.x, 0, PIPE_W, p.top);
+      ctx.fillRect(p.x, p.top + PIPE_GAP, PIPE_W, H - p.top - PIPE_GAP);
+    });
+
+    ctx.fillStyle = "#ffd23f";
+    ctx.shadowColor = "#ffd23f";
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function loop() {
+    if (!running) return;
+    update();
+    if (!running) return;
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function start() {
+    reset();
+    running = true;
+    overlay.classList.add("hidden");
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function gameOver() {
+    running = false;
+    if (score > best) { best = score; localStorage.setItem(BEST_KEY, best); bestEl.textContent = best; }
+    overlayTitle.textContent = "Game over";
+    overlayMsg.textContent = `You scored ${score}. Try again?`;
+    startBtn.textContent = "Restart";
+    overlay.classList.remove("hidden");
+  }
+
+  stage.addEventListener("mousedown", (e) => { if (e.target === startBtn) return; flap(); });
+  stage.addEventListener("touchstart", (e) => { if (e.target === startBtn) return; flap(); e.preventDefault(); }, { passive: false });
+  window.addEventListener("keydown", (e) => { if (e.key === " ") { e.preventDefault(); flap(); } });
+
+  startBtn.addEventListener("click", (e) => { e.stopPropagation(); start(); });
+  reset();
+  draw();
+})();
+</script>
+</body>
+</html>

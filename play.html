@@ -36,6 +36,7 @@
     </div>
 
     <p class="play-notice" id="mobile-notice" style="display: none;">📱 This experience is built for mobile devices with a camera — open this page on your phone for it to work properly.</p>
+    <p class="play-notice" id="desktop-notice" style="display: none;">🖥️ This game is built for desktop — grab a mouse and keyboard for the full experience.</p>
 
     <div class="game-frame-wrap" id="frame-wrap" style="display: none;">
       <iframe id="game-frame" title="Game" allow="fullscreen; gamepad; autoplay; clipboard-write; camera; microphone; geolocation; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads"></iframe>
@@ -100,8 +101,12 @@
           .map((t) => `<span class="pill">${t}</span>`)
           .join("");
 
-        if (game.mobileOnly && !window.matchMedia("(pointer: coarse)").matches) {
+        const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+        if (game.mobileOnly && !isCoarsePointer) {
           document.getElementById("mobile-notice").style.display = "";
+        }
+        if (game.desktopOnly && isCoarsePointer) {
+          document.getElementById("desktop-notice").style.display = "";
         }
 
         if (game.source) {

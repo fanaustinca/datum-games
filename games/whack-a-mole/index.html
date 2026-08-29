@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Whack-a-Mole</title>
+<style>
+  :root { --bg: #06070a; --grid: #12141c; --hole: #1b1e28; --text: #eef0f7; --dim: #9aa0b4; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; -webkit-user-select: none; user-select: none;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #hud { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 0.85rem; color: var(--dim); flex-shrink: 0; gap: 10px; }
+  #hud strong { color: var(--text); font-size: 1.1rem; }
+  #stage { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 10px; position: relative; }
+  #field {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: min(90vw, 420px);
+  }
+  .hole {
+    aspect-ratio: 1;
+    background: radial-gradient(circle at 50% 40%, #0e0f14, var(--hole) 70%);
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    border: 3px solid #262a37;
+  }
+  .mole {
+    position: absolute;
+    left: 10%; right: 10%; bottom: -100%;
+    height: 90%;
+    background: linear-gradient(160deg, #a06a3f, #7a4d2b);
+    border-radius: 50% 50% 40% 40%;
+    transition: bottom 0.12s ease-out;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem;
+  }
+  .hole.up .mole { bottom: 4%; }
+  .hole.hit .mole { background: linear-gradient(160deg, #ff5c7c, #c23a56); }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(6,7,10,0.86); text-align: center; padding: 20px; }
+  #overlay.hidden { display: none; }
+  #overlay h2 { margin: 0; font-size: 1.4rem; }
+  #overlay p { margin: 0; color: var(--dim); font-size: 0.9rem; }
+  button { background: linear-gradient(135deg, #7c5cff, #39e6ff); border: none; color: #06070a; font-weight: 700; padding: 10px 22px; border-radius: 999px; cursor: pointer; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span>Score: <strong id="score">0</strong></span>
+    <span>Time: <strong id="time">30</strong>s</span>
+    <span>Best: <strong id="best">0</strong></span>
+  </div>
+  <div id="stage">
+    <div id="field"></div>
+    <div id="overlay">
+      <h2 id="overlay-title">Whack-a-Mole</h2>
+      <p id="overlay-msg">30 seconds. Tap the moles as fast as you can.</p>
+      <button id="start-btn">Start</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const HOLES = 9;
+  const field = document.getElementById("field");
+  const scoreEl = document.getElementById("score");
+  const timeEl = document.getElementById("time");
+  const bestEl = document.getElementById("best");
+  const overlay = document.getElementById("overlay");
+  const overlayTitle = document.getElementById("overlay-title");
+  const overlayMsg = document.getElementById("overlay-msg");
+  const startBtn = document.getElementById("start-btn");
+
+  const BEST_KEY = "datum-whack-best";
+  let best = Number(localStorage.getItem(BEST_KEY) || 0);
+  bestEl.textContent = best;
+
+  let holes, score, timeLeft, running, spawnTimer, countdownTimer, activeHole;
+
+  field.innerHTML = "";
+  holes = [];
+  for (let i = 0; i < HOLES; i++) {
+    const hole = document.createElement("div");
+    hole.className = "hole";
+    hole.innerHTML = '<div class="mole">🐹</div>';
+    hole.addEventListener("click", () => whack(i));
+    field.appendChild(hole);
+    holes.push(hole);
+  }
+
+  function whack(i) {
+    if (!running) return;
+    const hole = holes[i];
+    if (!hole.classList.contains("up") || hole.classList.contains("hit")) return;
+    hole.classList.add("hit");
+    score++;
+    scoreEl.textContent = score;
+    setTimeout(() => { hole.classList.remove("up", "hit"); }, 120);
+  }
+
+  function spawnMole() {
+    if (!running) return;
+    if (activeHole !== undefined) holes[activeHole].classList.remove("up", "hit");
+    let i;
+    do { i = Math.floor(Math.random() * HOLES); } while (i === activeHole);
+    activeHole = i;
+    holes[i].classList.add("up");
+    const upTime = Math.max(420, 950 - score * 12);
+    setTimeout(() => { if (running) holes[i].classList.remove("up", "hit"); }, upTime);
+    spawnTimer = setTimeout(spawnMole, Math.max(550, 1100 - score * 14));
+  }
+
+  function start() {
+    score = 0; timeLeft = 30; running = true; activeHole = undefined;
+    scoreEl.textContent = 0;
+    timeEl.textContent = 30;
+    holes.forEach((h) => h.classList.remove("up", "hit"));
+    overlay.classList.add("hidden");
+    spawnMole();
+    countdownTimer = setInterval(() => {
+      timeLeft--;
+      timeEl.textContent = timeLeft;
+      if (timeLeft <= 0) end();
+    }, 1000);
+  }
+
+  function end() {
+    running = false;
+    clearTimeout(spawnTimer);
+    clearInterval(countdownTimer);
+    holes.forEach((h) => h.classList.remove("up", "hit"));
+    if (score > best) { best = score; localStorage.setItem(BEST_KEY, best); bestEl.textContent = best; }
+    overlayTitle.textContent = "Time's up!";
+    overlayMsg.textContent = `You whacked ${score} moles.`;
+    startBtn.textContent = "Play again";
+    overlay.classList.remove("hidden");
+  }
+
+  startBtn.addEventListener("click", start);
+})();
+</script>
+</body>
+</html>

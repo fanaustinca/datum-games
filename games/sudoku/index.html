@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Sudoku</title>
+<style>
+  :root { --bg: #06070a; --grid: #12141c; --cell: #1b1e28; --cell-fixed: #14161d; --accent: #7c5cff; --text: #eef0f7; --dim: #9aa0b4; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; -webkit-user-select: none; user-select: none;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #hud { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 0.85rem; color: var(--dim); flex-shrink: 0; gap: 10px; flex-wrap: wrap; }
+  #hud strong { color: var(--text); font-size: 1rem; }
+  #hud button, .diff-btn { background: var(--cell); border: 1px solid #262a37; color: var(--text); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 0.78rem; }
+  .diff-btn.active { background: linear-gradient(135deg, var(--accent), #39e6ff); color: #06070a; font-weight: 700; border-color: transparent; }
+  #stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; gap: 14px; padding: 8px; }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    width: min(92vw, 420px);
+    aspect-ratio: 1;
+    background: var(--grid);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 1px;
+  }
+  .cell {
+    background: var(--cell-fixed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(0.8rem, 3.4vw, 1.2rem);
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .cell.editable { background: var(--cell); color: #39e6ff; cursor: pointer; }
+  .cell.selected { background: rgba(124,92,255,0.35); }
+  .cell.peer { background: rgba(124,92,255,0.1); }
+  .cell.conflict { color: #ff5c7c; }
+  .cell.br { border-right: 2px solid #06070a; }
+  .cell.bb { border-bottom: 2px solid #06070a; }
+  #numpad { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; width: min(92vw, 420px); }
+  #numpad button { aspect-ratio: 1; background: var(--cell); border: 1px solid #262a37; color: var(--text); border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
+  #numpad button.erase { grid-column: span 9; aspect-ratio: auto; padding: 8px; font-size: 0.85rem; }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(6,7,10,0.88); text-align: center; padding: 20px; }
+  #overlay.hidden { display: none; }
+  #overlay h2 { margin: 0; font-size: 1.4rem; }
+  #overlay p { margin: 0; color: var(--dim); font-size: 0.9rem; }
+  button.primary { background: linear-gradient(135deg, var(--accent), #39e6ff); border: none; color: #06070a; font-weight: 700; padding: 10px 22px; border-radius: 999px; cursor: pointer; font-size: 0.9rem; }
+  #stage { position: relative; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span>⏱ <strong id="timer">0</strong>s</span>
+    <div>
+      <button class="diff-btn" data-d="36">Easy</button>
+      <button class="diff-btn active" data-d="46">Medium</button>
+      <button class="diff-btn" data-d="54">Hard</button>
+    </div>
+    <button id="restart-btn">New puzzle</button>
+  </div>
+  <div id="stage">
+    <div id="board"></div>
+    <div id="numpad"></div>
+    <div id="overlay" class="hidden">
+      <h2>Solved! 🎉</h2>
+      <p id="overlay-msg"></p>
+      <button class="primary" id="overlay-btn">New puzzle</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const boardEl = document.getElementById("board");
+  const numpadEl = document.getElementById("numpad");
+  const timerEl = document.getElementById("timer");
+  const overlay = document.getElementById("overlay");
+  const overlayMsg = document.getElementById("overlay-msg");
+  const overlayBtn = document.getElementById("overlay-btn");
+  const restartBtn = document.getElementById("restart-btn");
+
+  let solution, puzzle, fixed, values, selected, timerInt, seconds, difficulty = 46;
+
+  function emptyBoard() { return Array(81).fill(0); }
+  function idx(r, c) { return r * 9 + c; }
+
+  function rowOf(i) { return Math.floor(i / 9); }
+  function colOf(i) { return i % 9; }
+  function boxOf(i) { const r = rowOf(i), c = colOf(i); return Math.floor(r / 3) * 3 + Math.floor(c / 3); }
+
+  function valid(b, i, val) {
+    const r = rowOf(i), c = colOf(i);
+    for (let k = 0; k < 9; k++) {
+      if (b[idx(r, k)] === val) return false;
+      if (b[idx(k, c)] === val) return false;
+    }
+    const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    for (let dr = 0; dr < 3; dr++)
+      for (let dc = 0; dc < 3; dc++)
+        if (b[idx(br + dr, bc + dc)] === val) return false;
+    return true;
+  }
+
+  function shuffled(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function fillBoard(b) {
+    const empty = b.indexOf(0);
+    if (empty === -1) return true;
+    for (const val of shuffled([1,2,3,4,5,6,7,8,9])) {
+      if (valid(b, empty, val)) {
+        b[empty] = val;
+        if (fillBoard(b)) return true;
+        b[empty] = 0;
+      }
+    }
+    return false;
+  }
+
+  function countSolutions(b, limit) {
+    const empty = b.indexOf(0);
+    if (empty === -1) return 1;
+    let count = 0;
+    for (let val = 1; val <= 9; val++) {
+      if (valid(b, empty, val)) {
+        b[empty] = val;
+        count += countSolutions(b, limit - count);
+        b[empty] = 0;
+        if (count >= limit) break;
+      }
+    }
+    return count;
+  }
+
+  function generatePuzzle(cellsToRemove) {
+    const full = emptyBoard();
+    fillBoard(full);
+    const p = [...full];
+    const order = shuffled([...Array(81).keys()]);
+    let removed = 0;
+    for (const i of order) {
+      if (removed >= cellsToRemove) break;
+      if (p[i] === 0) continue;
+      const backup = p[i];
+      p[i] = 0;
+      const copy = [...p];
+      if (countSolutions(copy, 2) === 1) {
+        removed++;
+      } else {
+        p[i] = backup;
+      }
+    }
+    return { full, puzzle: p };
+  }
+
+  function render() {
+    boardEl.innerHTML = "";
+    for (let i = 0; i < 81; i++) {
+      const el = document.createElement("div");
+      const r = rowOf(i), c = colOf(i);
+      el.className = "cell" + (fixed[i] ? "" : " editable") + (c % 3 === 2 && c !== 8 ? " br" : "") + (r % 3 === 2 && r !== 8 ? " bb" : "");
+      el.textContent = values[i] || "";
+      el.addEventListener("click", () => selectCell(i));
+      boardEl.appendChild(el);
+    }
+    highlight();
+  }
+
+  function highlight() {
+    const cells = boardEl.children;
+    for (let i = 0; i < 81; i++) {
+      cells[i].classList.remove("selected", "peer", "conflict");
+    }
+    if (selected == null) return;
+    const r = rowOf(selected), c = colOf(selected);
+    for (let i = 0; i < 81; i++) {
+      if (i === selected) continue;
+      if (rowOf(i) === r || colOf(i) === c || boxOf(i) === boxOf(selected)) cells[i].classList.add("peer");
+    }
+    cells[selected].classList.add("selected");
+    for (let i = 0; i < 81; i++) {
+      if (values[i] && !fixed[i]) {
+        const b = [...values];
+        b[i] = 0;
+        if (!valid(b, i, values[i])) cells[i].classList.add("conflict");
+      }
+    }
+  }
+
+  function selectCell(i) {
+    selected = i;
+    highlight();
+  }
+
+  function setValue(val) {
+    if (selected == null || fixed[selected]) return;
+    values[selected] = val;
+    boardEl.children[selected].textContent = val || "";
+    highlight();
+    checkWin();
+  }
+
+  function checkWin() {
+    if (values.every((v, i) => v === solution[i])) {
+      clearInterval(timerInt);
+      overlayMsg.textContent = `Solved in ${seconds}s.`;
+      overlay.classList.remove("hidden");
+    }
+  }
+
+  function startTimer() {
+    seconds = 0;
+    timerEl.textContent = 0;
+    clearInterval(timerInt);
+    timerInt = setInterval(() => { seconds++; timerEl.textContent = seconds; }, 1000);
+  }
+
+  function newGame() {
+    overlay.classList.add("hidden");
+    const { full, puzzle: p } = generatePuzzle(difficulty);
+    solution = full;
+    puzzle = p;
+    values = [...p];
+    fixed = p.map((v) => v !== 0);
+    selected = null;
+    render();
+    startTimer();
+  }
+
+  numpadEl.innerHTML = "";
+  for (let n = 1; n <= 9; n++) {
+    const btn = document.createElement("button");
+    btn.textContent = n;
+    btn.addEventListener("click", () => setValue(n));
+    numpadEl.appendChild(btn);
+  }
+  const eraseBtn = document.createElement("button");
+  eraseBtn.className = "erase";
+  eraseBtn.textContent = "Erase";
+  eraseBtn.addEventListener("click", () => setValue(0));
+  numpadEl.appendChild(eraseBtn);
+
+  window.addEventListener("keydown", (e) => {
+    if (selected == null) return;
+    if (e.key >= "1" && e.key <= "9") setValue(Number(e.key));
+    if (e.key === "Backspace" || e.key === "Delete" || e.key === "0") setValue(0);
+  });
+
+  document.querySelectorAll(".diff-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".diff-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      difficulty = Number(btn.dataset.d);
+      newGame();
+    });
+  });
+
+  restartBtn.addEventListener("click", newGame);
+  overlayBtn.addEventListener("click", newGame);
+
+  newGame();
+})();
+</script>
+</body>
+</html>
