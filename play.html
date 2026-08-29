@@ -30,12 +30,13 @@
         </div>
       </div>
       <div class="play-actions">
+        <a class="btn" id="source-link" href="#" target="_blank" rel="noopener" style="display: none;">View on itch.io ↗</a>
         <button class="btn" id="fullscreen-btn">Fullscreen</button>
       </div>
     </div>
 
     <div class="game-frame-wrap">
-      <iframe id="game-frame" title="Game" allow="fullscreen; gamepad; autoplay" sandbox="allow-scripts allow-same-origin allow-pointer-lock"></iframe>
+      <iframe id="game-frame" title="Game" allow="fullscreen; gamepad; autoplay; clipboard-write" sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-popups allow-forms allow-downloads"></iframe>
     </div>
 
     <p class="play-desc" id="play-desc"></p>
@@ -77,6 +78,12 @@
           .map((t) => `<span class="pill">${t}</span>`)
           .join("");
         frame.src = game.path;
+
+        if (game.source) {
+          const sourceLink = document.getElementById("source-link");
+          sourceLink.href = game.source;
+          sourceLink.style.display = "";
+        }
 
         fullscreenBtn.addEventListener("click", () => {
           if (frame.requestFullscreen) frame.requestFullscreen();
