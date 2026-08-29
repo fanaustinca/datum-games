@@ -49,5 +49,42 @@
     "tags": ["puzzle", "physics", "logic", "singleplayer", "mouse"],
     "added": "2026-08-29",
     "featured": true
+  },
+  {
+    "id": "ant-colony-tycoon",
+    "title": "Ant Colony Tycoon",
+    "tagline": "Grow your colony, crush the competition.",
+    "description": "Gather resources, train ant units like Workers and War Ants, and expand your nest in this multiplayer strategy sim. Climb the leaderboard by out-building and out-battling rival colonies.",
+    "path": "https://fanaustinca.github.io/ant-colony-tycoon/",
+    "icon": "🐜",
+    "color": "#d97706",
+    "tags": ["strategy", "simulation", "idle", "multiplayer", "mouse"],
+    "added": "2026-08-29",
+    "featured": true
+  },
+  {
+    "id": "blacksite",
+    "title": "BLACKSITE",
+    "tagline": "Infiltrate. Neutralize. Survive.",
+    "description": "A tactical first-person shooter. Clear sector after sector, take down boss-tier Wardens every fifth sector, and fight solo, co-op, or PvP.",
+    "path": "https://fanaustinca.github.io/blacksite/",
+    "icon": "🔫",
+    "color": "#ff5c7c",
+    "tags": ["fps", "shooter", "multiplayer", "pvp", "co-op", "keyboard", "mouse", "touch"],
+    "added": "2026-08-29",
+    "featured": true
+  },
+  {
+    "id": "ararcheogame",
+    "title": "ARArcheoGame",
+    "tagline": "Dig up the past in augmented reality.",
+    "description": "A camera-based augmented reality archaeology experience — point your phone at the world around you to uncover and interact with artifacts. Built with 8th Wall; requires a mobile device with a camera.",
+    "path": "https://ar.flamebots.org",
+    "icon": "🏺",
+    "color": "#c9a227",
+    "tags": ["ar", "augmented-reality", "archaeology", "mobile-only", "camera", "touch"],
+    "mobileOnly": true,
+    "added": "2026-08-29",
+    "featured": true
   }
 ]

@@ -62,6 +62,11 @@ files, including GitHub Pages.
      `frame-ancestors` CSP), where you're instead pointing `path` at a
      self-hosted mirror. It also gives the official page top billing
      for search indexing while still letting people play in-place.
+   - `mobileOnly` (optional, boolean) — set `true` for touch/camera-only
+     experiences (e.g. AR games). The play page shows a small banner
+     suggesting the visitor switch to a phone if their device doesn't
+     look like one (checked via `(pointer: coarse)`). It doesn't block
+     desktop visitors, just warns them.
 3. Commit and push. GitHub Pages redeploys automatically.
 
 That's it — no other file needs to change. The search bar, tag filters,

@@ -418,6 +418,16 @@ main {
   margin-top: 6px;
 }
 
+.play-notice {
+  margin: 0 0 14px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 210, 63, 0.35);
+  background: rgba(255, 210, 63, 0.08);
+  color: #ffd23f;
+  font-size: 0.85rem;
+}
+
 .game-frame-wrap {
   border-radius: var(--radius);
   overflow: hidden;
