@@ -1,0 +1,26 @@
+[
+  {
+    "id": "snake",
+    "title": "Neon Snake",
+    "tagline": "Classic snake, rewired.",
+    "description": "Guide your snake through a glowing grid, eat pellets to grow, and avoid crashing into yourself. Speed ramps up the longer you survive.",
+    "path": "games/snake/index.html",
+    "icon": "🐍",
+    "color": "#39ff88",
+    "tags": ["arcade", "classic", "singleplayer", "keyboard"],
+    "added": "2026-08-29",
+    "featured": true
+  },
+  {
+    "id": "memory-match",
+    "title": "Memory Match",
+    "tagline": "Flip, match, remember.",
+    "description": "A card-matching memory game with increasing difficulty. Race the clock and your own recall to clear the board in as few moves as possible.",
+    "path": "games/memory-match/index.html",
+    "icon": "🧠",
+    "color": "#7c5cff",
+    "tags": ["puzzle", "classic", "singleplayer", "mouse"],
+    "added": "2026-08-29",
+    "featured": true
+  }
+]

@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Memory Match</title>
+<style>
+  :root {
+    --bg: #06070a;
+    --card: #14161d;
+    --card-face: #1b1e28;
+    --accent: #7c5cff;
+    --accent-2: #39e6ff;
+    --text: #eef0f7;
+    --dim: #9aa0b4;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+  }
+  #wrap { display: flex; flex-direction: column; height: 100%; }
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    color: var(--dim);
+    flex-shrink: 0;
+  }
+  #hud strong { color: var(--text); font-size: 1rem; }
+  #hud button {
+    background: var(--card-face);
+    border: 1px solid #262a37;
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  #stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 10px;
+    position: relative;
+  }
+  #board {
+    display: grid;
+    gap: 10px;
+    width: min(94%, 480px);
+    aspect-ratio: 4 / 3;
+  }
+  .tile {
+    perspective: 600px;
+    cursor: pointer;
+  }
+  .tile-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.35s ease;
+  }
+  .tile.flipped .tile-inner,
+  .tile.matched .tile-inner {
+    transform: rotateY(180deg);
+  }
+  .face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    backface-visibility: hidden;
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+  }
+  .face.back {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
+  .face.front {
+    background: var(--card-face);
+    border: 1px solid #262a37;
+    transform: rotateY(180deg);
+  }
+  .tile.matched .face.front {
+    border-color: #39ff88;
+    box-shadow: 0 0 0 2px rgba(57,255,136,0.35) inset;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: rgba(6,7,10,0.88);
+    text-align: center;
+    padding: 20px;
+  }
+  #overlay.hidden { display: none; }
+  #overlay h2 { margin: 0; font-size: 1.4rem; }
+  #overlay p { margin: 0; color: var(--dim); font-size: 0.9rem; }
+  #overlay button {
+    background: linear-gradient(135deg, #7c5cff, #39e6ff);
+    border: none;
+    color: #06070a;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span>Moves: <strong id="moves">0</strong></span>
+    <span>Best: <strong id="best">–</strong></span>
+    <button id="restart-btn">Restart</button>
+  </div>
+  <div id="stage">
+    <div id="board"></div>
+    <div id="overlay" class="hidden">
+      <h2>Solved! 🎉</h2>
+      <p id="overlay-msg"></p>
+      <button id="play-again-btn">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const ICONS = ["🍕","🚀","🎧","🐙","🌵","⚡","🎲","🦄","🍩","🧩","🔥","💎"];
+  const PAIRS = 8; // 4x4 board
+  const board = document.getElementById("board");
+  const movesEl = document.getElementById("moves");
+  const bestEl = document.getElementById("best");
+  const overlay = document.getElementById("overlay");
+  const overlayMsg = document.getElementById("overlay-msg");
+
+  const BEST_KEY = "datum-memory-best";
+  let best = Number(localStorage.getItem(BEST_KEY) || 0);
+  bestEl.textContent = best > 0 ? best : "–";
+
+  let tiles, flipped, matchedCount, moves, lock;
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function buildBoard() {
+    const cols = 4, rows = Math.ceil((PAIRS * 2) / cols);
+    board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    board.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+    const deck = shuffle([...ICONS.slice(0, PAIRS), ...ICONS.slice(0, PAIRS)]);
+    board.innerHTML = "";
+    tiles = deck.map((icon, i) => {
+      const el = document.createElement("div");
+      el.className = "tile";
+      el.dataset.icon = icon;
+      el.dataset.index = i;
+      el.innerHTML = `
+        <div class="tile-inner">
+          <div class="face back"></div>
+          <div class="face front">${icon}</div>
+        </div>`;
+      el.addEventListener("click", () => onTileClick(el));
+      board.appendChild(el);
+      return el;
+    });
+
+    flipped = [];
+    matchedCount = 0;
+    moves = 0;
+    lock = false;
+    movesEl.textContent = moves;
+    overlay.classList.add("hidden");
+  }
+
+  function onTileClick(el) {
+    if (lock || el.classList.contains("flipped") || el.classList.contains("matched")) return;
+    el.classList.add("flipped");
+    flipped.push(el);
+
+    if (flipped.length === 2) {
+      moves++;
+      movesEl.textContent = moves;
+      lock = true;
+      const [a, b] = flipped;
+      if (a.dataset.icon === b.dataset.icon) {
+        a.classList.add("matched");
+        b.classList.add("matched");
+        flipped = [];
+        lock = false;
+        matchedCount++;
+        if (matchedCount === PAIRS) finish();
+      } else {
+        setTimeout(() => {
+          a.classList.remove("flipped");
+          b.classList.remove("flipped");
+          flipped = [];
+          lock = false;
+        }, 700);
+      }
+    }
+  }
+
+  function finish() {
+    if (best === 0 || moves < best) {
+      best = moves;
+      localStorage.setItem(BEST_KEY, best);
+      bestEl.textContent = best;
+    }
+    overlayMsg.textContent = `You solved it in ${moves} moves.`;
+    setTimeout(() => overlay.classList.remove("hidden"), 400);
+  }
+
+  document.getElementById("restart-btn").addEventListener("click", buildBoard);
+  document.getElementById("play-again-btn").addEventListener("click", buildBoard);
+
+  buildBoard();
+})();
+</script>
+</body>
+</html>

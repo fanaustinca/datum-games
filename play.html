@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading… — Datum Games</title>
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <span class="mark">D</span>
+      <span>
+        DATUM GAMES
+        <span class="sub">play instantly · no signup</span>
+      </span>
+    </a>
+  </header>
+
+  <main>
+    <a class="back-link" href="index.html">&larr; Back to all games</a>
+
+    <div class="play-header">
+      <div class="play-title">
+        <div class="icon" id="play-icon"></div>
+        <div>
+          <h1 id="play-title">Loading…</h1>
+          <p id="play-tagline"></p>
+        </div>
+      </div>
+      <div class="play-actions">
+        <button class="btn" id="fullscreen-btn">Fullscreen</button>
+      </div>
+    </div>
+
+    <div class="game-frame-wrap">
+      <iframe id="game-frame" title="Game" allow="fullscreen; gamepad; autoplay" sandbox="allow-scripts allow-same-origin allow-pointer-lock"></iframe>
+    </div>
+
+    <p class="play-desc" id="play-desc"></p>
+    <div class="play-tags" id="play-tags"></div>
+  </main>
+
+  <footer class="site-footer">
+    <span>© <span id="year"></span> Datum Games</span>
+    <span><a href="https://github.com/" id="repo-link" target="_blank" rel="noopener">View source on GitHub</a></span>
+  </footer>
+
+  <script src="assets/js/catalog.js"></script>
+  <script>
+    (async function () {
+      document.getElementById("year").textContent = new Date().getFullYear();
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      const frame = document.getElementById("game-frame");
+      const fullscreenBtn = document.getElementById("fullscreen-btn");
+
+      try {
+        const games = await window.DatumCatalog.loadGames();
+        const game = games.find((g) => g.id === id);
+
+        if (!game) {
+          document.getElementById("play-title").textContent = "Game not found";
+          document.getElementById("play-tagline").textContent = "That game doesn't exist in the catalog.";
+          document.querySelector(".game-frame-wrap").style.display = "none";
+          return;
+        }
+
+        document.title = `${game.title} — Datum Games`;
+        document.getElementById("play-title").textContent = game.title;
+        document.getElementById("play-tagline").textContent = game.tagline || "";
+        document.getElementById("play-desc").textContent = game.description || "";
+        document.getElementById("play-icon").textContent = game.icon || "🎮";
+        document.getElementById("play-icon").style.background = `${game.color}33`;
+        document.getElementById("play-tags").innerHTML = (game.tags || [])
+          .map((t) => `<span class="pill">${t}</span>`)
+          .join("");
+        frame.src = game.path;
+
+        fullscreenBtn.addEventListener("click", () => {
+          if (frame.requestFullscreen) frame.requestFullscreen();
+          else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+        });
+      } catch (err) {
+        document.getElementById("play-title").textContent = "Something went wrong";
+        document.getElementById("play-tagline").textContent = err.message;
+      }
+    })();
+  </script>
+</body>
+</html>

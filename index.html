@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datum Games — Free browser games</title>
+  <meta name="description" content="Datum Games is a free, no-signup collection of browser games. Play instantly, no downloads, no accounts." />
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <span class="mark">D</span>
+      <span>
+        DATUM GAMES
+        <span class="sub">play instantly · no signup</span>
+      </span>
+    </a>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="search-input" type="text" placeholder="Search games, genres, tags…" autocomplete="off" />
+    </div>
+    <div class="header-meta"><span id="result-count"></span></div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Play something new.</h1>
+      <p>A small, hand-picked library of free browser games. Everything runs client-side — no accounts, no installs.</p>
+    </section>
+
+    <div id="tag-bar" class="tag-bar"></div>
+
+    <section id="game-grid" class="grid" aria-live="polite"></section>
+  </main>
+
+  <footer class="site-footer">
+    <span>© <span id="year"></span> Datum Games</span>
+    <span><a href="https://github.com/" id="repo-link" target="_blank" rel="noopener">View source on GitHub</a></span>
+  </footer>
+
+  <script src="assets/js/catalog.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>
