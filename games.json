@@ -231,5 +231,18 @@
     "desktopOnly": true,
     "added": "2026-08-29",
     "featured": true
+  },
+  {
+    "id": "frontline-defense-3d",
+    "title": "Frontline Defense 3D",
+    "tagline": "Build, defend, survive the next wave.",
+    "description": "A real-time 3D tower defense game — place military structures across expanding territory to hold your base against escalating enemy waves. Orbit the camera, zoom, and command with number-key shortcuts.",
+    "path": "https://fanaustinca.github.io/frontline-defense-3d/",
+    "icon": "🛡️",
+    "color": "#4b7bff",
+    "tags": ["tower-defense", "strategy", "3d", "singleplayer", "mouse", "keyboard", "desktop-only"],
+    "desktopOnly": true,
+    "added": "2026-08-29",
+    "featured": true
   }
 ]
