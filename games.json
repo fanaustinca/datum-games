@@ -24,6 +24,18 @@
     "featured": true
   },
   {
+    "id": "seafood-factory-tycoon",
+    "title": "Seafood Factory Tycoon",
+    "tagline": "Land the catch, run the line.",
+    "description": "Build a harbour and a factory along one serpentine conveyor. Crates are real boxes that queue and jam, so a stalled berth backs product up the whole line. Three self-contained production lines take fish, kelp and crab from raw catch to a Harbour Feast.",
+    "path": "https://fanaustinca.github.io/seafood-factory-tycoon/",
+    "icon": "🐟",
+    "color": "#2e7c93",
+    "tags": ["idle", "simulation", "strategy", "singleplayer", "mouse", "touch"],
+    "added": "2026-09-03",
+    "featured": true
+  },
+  {
     "id": "constraint",
     "title": "Constraint",
     "tagline": "600+ levels of physics platforming.",
