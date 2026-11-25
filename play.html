@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Loading… — Datum Games</title>
-  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+  <title>Loading… — Two Thirds Interactive</title>
+  <link rel="icon" href="assets/img/logo.png" type="image/png" />
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
   <header class="site-header">
     <a class="brand" href="index.html">
-      <span class="mark">D</span>
+      <img class="mark" src="assets/img/logo.png" alt="Two Thirds Interactive logo" width="36" height="32" />
       <span>
-        DATUM GAMES
+        TWO THIRDS INTERACTIVE
         <span class="sub">play instantly · no signup</span>
       </span>
     </a>
@@ -56,7 +56,7 @@
   </main>
 
   <footer class="site-footer">
-    <span>© <span id="year"></span> Datum Games</span>
+    <span>© <span id="year"></span> Two Thirds Interactive</span>
     <span><a href="https://github.com/fanaustinca/datum-games" id="repo-link" target="_blank" rel="noopener">View source on GitHub</a></span>
   </footer>
 
@@ -91,7 +91,7 @@
           return;
         }
 
-        document.title = `${game.title} — Datum Games`;
+        document.title = `${game.title} — Two Thirds Interactive`;
         document.getElementById("play-title").textContent = game.title;
         document.getElementById("play-tagline").textContent = game.tagline || "";
         document.getElementById("play-desc").textContent = game.description || "";

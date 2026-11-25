@@ -256,5 +256,78 @@
     "desktopOnly": true,
     "added": "2026-08-29",
     "featured": true
+  },
+  {
+    "id": "firestorm-surge",
+    "title": "Firestorm Surge",
+    "tagline": "Fast 3D multiplayer shooter.",
+    "description": "A fast 3D multiplayer FPS with 39 weapons, 4 maps and 4 modes.",
+    "path": "https://fanaustinca.github.io/firestorm-surge/",
+    "icon": "🔥",
+    "color": "#ff6a3d",
+    "tags": ["fps", "shooter", "3d", "multiplayer", "pvp", "keyboard", "mouse", "desktop-only"],
+    "desktopOnly": true,
+    "added": "2026-11-25",
+    "featured": false
+  },
+  {
+    "id": "apex-overland",
+    "title": "APEX OVERLAND",
+    "tagline": "Open-world offroad point-to-point racing.",
+    "description": "Open-world offroad point-to-point racing in the browser: 4 biomes, 17 vehicles, modular upgrades, 15 races and a secret 12x12 to find.",
+    "path": "https://fanaustinca.github.io/apex-overland/",
+    "icon": "🏜️",
+    "color": "#e6b422",
+    "tags": ["racing", "open-world", "3d", "singleplayer"],
+    "added": "2026-11-25",
+    "featured": false
+  },
+  {
+    "id": "starhopper",
+    "title": "Starhopper",
+    "tagline": "A robot platformer across the solar system.",
+    "description": "A 2.5D robot platformer across the solar system and beyond: 16 worlds, 481 levels.",
+    "path": "https://fanaustinca.github.io/starhopper/",
+    "icon": "🚀",
+    "color": "#4fc3f7",
+    "tags": ["platformer", "singleplayer", "keyboard"],
+    "added": "2026-11-25",
+    "featured": false
+  },
+  {
+    "id": "panic-on-the-plates",
+    "title": "Panic on the Plates",
+    "tagline": "Co-op 3D kitchen chaos.",
+    "description": "Co-op 3D kitchen chaos for up to 4 cooks. 8 worlds, 80 levels, peer-to-peer multiplayer in your browser.",
+    "path": "https://fanaustinca.github.io/panic-on-the-plates/",
+    "icon": "🍳",
+    "color": "#ffb347",
+    "tags": ["co-op", "multiplayer", "3d", "party", "keyboard"],
+    "added": "2026-11-25",
+    "featured": false
+  },
+  {
+    "id": "saltfire",
+    "title": "SALTFIRE",
+    "tagline": "Build a pirate empire.",
+    "description": "Build a pirate empire: 3D naval battles, base building, crafting, a player market and P2P multiplayer with 6-digit room codes.",
+    "path": "https://fanaustinca.github.io/saltfire/",
+    "icon": "⚓",
+    "color": "#3ec6b0",
+    "tags": ["strategy", "simulation", "3d", "multiplayer", "building", "mouse", "keyboard"],
+    "added": "2026-11-25",
+    "featured": false
+  },
+  {
+    "id": "cartastrophe",
+    "title": "Cartastrophe",
+    "tagline": "Shopping-cart racing through destructible grocery stores.",
+    "description": "8-player shopping-cart racing through destructible parody grocery stores.",
+    "path": "https://fanaustinca.github.io/cartastrophe/",
+    "icon": "🛒",
+    "color": "#ff4fa3",
+    "tags": ["racing", "multiplayer", "3d", "party", "keyboard"],
+    "added": "2026-11-25",
+    "featured": false
   }
 ]

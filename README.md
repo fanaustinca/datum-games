@@ -1,4 +1,4 @@
-# Datum Games
+# Two Thirds Interactive — Games
 
 A free, static browser game hub. No backend, no build step, no accounts —
 just HTML/CSS/JS hosted on GitHub Pages.
@@ -25,7 +25,7 @@ files, including GitHub Pages.
 1. Drop the game's files into `games/<your-game-id>/`, with a self-contained
    `index.html` as the entry point (the way `games/snake/` and
    `games/memory-match/` are set up). The game must run entirely in the
-   browser — no server calls back to Datum Games.
+   browser — no server calls back to Two Thirds Interactive.
    - If a game is already hosted elsewhere (e.g. itch.io), you can skip
      step 1 and just point `path` at its URL directly.
 2. Add an entry to `games.json`:
@@ -99,7 +99,7 @@ datum-games/
 │   ├── css/style.css
 │   ├── js/catalog.js     # fetch + filter/search helpers
 │   ├── js/app.js         # homepage wiring
-│   └── img/favicon.svg
+│   └── img/logo.png      # logo: header mark + favicon
 └── games/
     ├── snake/index.html
     └── memory-match/index.html
